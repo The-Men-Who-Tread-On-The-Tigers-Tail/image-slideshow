@@ -34,8 +34,10 @@ function setupDOM() {
         <option value="30000" selected>30 sec</option>
       </select>
       <button id="shuffleBtn">🔀 Shuffle</button>
+      <button id="metadataBtn">ℹ Info</button>
       <button id="fullscreenBtn">⛶ Fullscreen</button>
     </div>
+    <div class="metadata" id="metadata"></div>
   `;
 }
 
@@ -309,5 +311,226 @@ describe('Clock feature', () => {
     expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 1000);
 
     setIntervalSpy.mockRestore();
+  });
+});
+
+describe('Metadata feature', () => {
+  it('should initialize metadata elements', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(slideshow.metadata).toBe(document.getElementById('metadata'));
+    expect(slideshow.metadataBtn).toBe(document.getElementById('metadataBtn'));
+    expect(slideshow.showMetadata).toBe(false);
+  });
+
+  it('should toggle showMetadata state', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(slideshow.showMetadata).toBe(false);
+
+    slideshow.toggleMetadata();
+    expect(slideshow.showMetadata).toBe(true);
+
+    slideshow.toggleMetadata();
+    expect(slideshow.showMetadata).toBe(false);
+  });
+
+  it('should add enabled class when metadata is shown', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    slideshow.toggleMetadata();
+    expect(document.getElementById('metadata').classList.contains('enabled')).toBe(true);
+
+    slideshow.toggleMetadata();
+    expect(document.getElementById('metadata').classList.contains('enabled')).toBe(false);
+  });
+
+  it('should update button text when toggling', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info');
+
+    slideshow.toggleMetadata();
+    expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info ✓');
+
+    slideshow.toggleMetadata();
+    expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info');
+  });
+
+  it('should toggle metadata when I key is pressed', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(slideshow.showMetadata).toBe(false);
+
+    const event = new KeyboardEvent('keydown', { key: 'i' });
+    slideshow.handleKeydown(event);
+
+    expect(slideshow.showMetadata).toBe(true);
+  });
+
+  it('should toggle metadata when uppercase I key is pressed', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(slideshow.showMetadata).toBe(false);
+
+    const event = new KeyboardEvent('keydown', { key: 'I' });
+    slideshow.handleKeydown(event);
+
+    expect(slideshow.showMetadata).toBe(true);
+  });
+
+  it('should display metadata correctly', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const mockData = {
+      filename: 'test.jpg',
+      width: 1920,
+      height: 1080,
+      size: 1536000,
+      modified: '2024-01-15T10:30:00.000Z',
+      type: 'jpg'
+    };
+
+    slideshow.displayMetadata(mockData);
+
+    const metadataHtml = document.getElementById('metadata').innerHTML;
+    expect(metadataHtml).toContain('test.jpg');
+    expect(metadataHtml).toContain('1920 × 1080');
+    expect(metadataHtml).toContain('1.5 MB');
+    expect(metadataHtml).toContain('JPG');
+  });
+
+  it('should display EXIF data when available', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const mockData = {
+      filename: 'photo.jpg',
+      width: 4000,
+      height: 3000,
+      size: 5000000,
+      modified: '2024-01-15T10:30:00.000Z',
+      type: 'jpg',
+      exif: {
+        camera: 'Canon EOS R5',
+        lens: 'RF 24-70mm F2.8',
+        dateTaken: '2024:01:10 14:30:00',
+        aperture: 'f/2.8',
+        shutterSpeed: '1/250s',
+        iso: 400,
+        focalLength: '50mm',
+        flash: 'Flash did not fire',
+        gps: { latitude: 37.7749, longitude: -122.4194 },
+        artist: 'John Doe',
+        copyright: '© 2024',
+        software: 'Adobe Lightroom'
+      }
+    };
+
+    slideshow.displayMetadata(mockData);
+
+    const metadataHtml = document.getElementById('metadata').innerHTML;
+    expect(metadataHtml).toContain('Canon EOS R5');
+    expect(metadataHtml).toContain('RF 24-70mm F2.8');
+    expect(metadataHtml).toContain('2024:01:10 14:30:00');
+    expect(metadataHtml).toContain('f/2.8');
+    expect(metadataHtml).toContain('1/250s');
+    expect(metadataHtml).toContain('ISO 400');
+    expect(metadataHtml).toContain('50mm');
+    expect(metadataHtml).toContain('Flash did not fire');
+    expect(metadataHtml).toContain('37.774900');
+    expect(metadataHtml).toContain('-122.419400');
+    expect(metadataHtml).toContain('John Doe');
+    expect(metadataHtml).toContain('© 2024');
+    expect(metadataHtml).toContain('Adobe Lightroom');
+  });
+
+  it('should handle partial EXIF data', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const mockData = {
+      filename: 'photo.jpg',
+      width: 1920,
+      height: 1080,
+      size: 1000000,
+      modified: '2024-01-15T10:30:00.000Z',
+      type: 'jpg',
+      exif: {
+        camera: 'iPhone 15 Pro',
+        iso: 100
+      }
+    };
+
+    slideshow.displayMetadata(mockData);
+
+    const metadataHtml = document.getElementById('metadata').innerHTML;
+    expect(metadataHtml).toContain('iPhone 15 Pro');
+    expect(metadataHtml).toContain('ISO 100');
+    expect(metadataHtml).not.toContain('Lens:');
+    expect(metadataHtml).not.toContain('GPS:');
+  });
+
+  it('should format file sizes correctly', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // Test bytes
+    slideshow.displayMetadata({ filename: 'a.jpg', size: 500, modified: '2024-01-15T10:30:00.000Z' });
+    expect(document.getElementById('metadata').innerHTML).toContain('500 B');
+
+    // Test KB
+    slideshow.displayMetadata({ filename: 'b.jpg', size: 2048, modified: '2024-01-15T10:30:00.000Z' });
+    expect(document.getElementById('metadata').innerHTML).toContain('2.0 KB');
+
+    // Test MB
+    slideshow.displayMetadata({ filename: 'c.jpg', size: 5242880, modified: '2024-01-15T10:30:00.000Z' });
+    expect(document.getElementById('metadata').innerHTML).toContain('5.0 MB');
+  });
+
+  it('should fetch metadata when enabled and showing image', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    slideshow.displayImages = ['image1.jpg', 'image2.jpg'];
+    slideshow.currentIndex = 0;
+    slideshow.showMetadata = true;
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        filename: 'image1.jpg',
+        width: 800,
+        height: 600,
+        size: 1024,
+        modified: '2024-01-15T10:30:00.000Z',
+        type: 'jpg'
+      })
+    });
+
+    await slideshow.fetchMetadata();
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/images/image1.jpg/metadata');
+  });
+
+  it('should not fetch metadata when disabled', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    slideshow.displayImages = ['image1.jpg'];
+    slideshow.currentIndex = 0;
+    slideshow.showMetadata = false;
+
+    jest.clearAllMocks();
+    await slideshow.fetchMetadata();
+
+    expect(global.fetch).not.toHaveBeenCalledWith(expect.stringContaining('/metadata'));
   });
 });

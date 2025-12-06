@@ -29,7 +29,7 @@ This is a fullscreen image slideshow application with a TypeScript Express backe
 - Double-buffered slide transitions for smooth crossfades
 - Start screen showing image count before launching
 - Controls: prev/next, play/pause, interval selection (3s-5min), fullscreen
-- Keyboard shortcuts: arrows (nav), space (next), Escape (pause), F (fullscreen), S (shuffle/order)
+- Keyboard shortcuts: arrows (nav), space (next), Escape (pause), F (fullscreen), S (shuffle/order), I (info/metadata)
 - Touch support: left/right edges for nav, center for pause
 - Auto-hides cursor and controls after 20 seconds of inactivity
 

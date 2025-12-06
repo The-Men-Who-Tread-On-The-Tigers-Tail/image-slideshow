@@ -9,6 +9,7 @@ class Slideshow {
     this.isShuffled = true;
     this.activeSlide = 1;
     this.cursorTimeout = null;
+    this.showMetadata = false;
 
     this.initElements();
     this.bindEvents();
@@ -31,6 +32,8 @@ class Slideshow {
     this.fullscreenBtn = document.getElementById('fullscreenBtn');
     this.imageCounter = document.getElementById('imageCounter');
     this.clock = document.getElementById('clock');
+    this.metadata = document.getElementById('metadata');
+    this.metadataBtn = document.getElementById('metadataBtn');
   }
 
   bindEvents() {
@@ -40,6 +43,7 @@ class Slideshow {
     this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
     this.intervalSelect.addEventListener('change', (e) => this.changeInterval(e.target.value));
     this.shuffleBtn.addEventListener('click', () => this.toggleShuffle());
+    this.metadataBtn.addEventListener('click', () => this.toggleMetadata());
     this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
 
     // Keyboard controls
@@ -134,6 +138,11 @@ class Slideshow {
 
     // Update counter
     this.imageCounter.textContent = `${this.currentIndex + 1} / ${this.displayImages.length}`;
+
+    // Update metadata if enabled
+    if (this.showMetadata) {
+      this.fetchMetadata();
+    }
   }
 
   next() {
@@ -223,6 +232,125 @@ class Slideshow {
     setInterval(updateClock, 1000);
   }
 
+  toggleMetadata() {
+    this.showMetadata = !this.showMetadata;
+    this.updateMetadataButton();
+    if (this.showMetadata) {
+      this.metadata.classList.add('enabled');
+      this.fetchMetadata();
+    } else {
+      this.metadata.classList.remove('enabled');
+    }
+  }
+
+  updateMetadataButton() {
+    this.metadataBtn.textContent = this.showMetadata ? 'ℹ Info ✓' : 'ℹ Info';
+  }
+
+  async fetchMetadata() {
+    if (!this.showMetadata || this.displayImages.length === 0) return;
+
+    const imageName = this.displayImages[this.currentIndex];
+    try {
+      const response = await fetch(`/api/images/${encodeURIComponent(imageName)}/metadata`);
+      if (!response.ok) {
+        this.metadata.innerHTML = '<div>Metadata unavailable</div>';
+        return;
+      }
+      const data = await response.json();
+      this.displayMetadata(data);
+    } catch (error) {
+      this.metadata.innerHTML = '<div>Failed to load metadata</div>';
+    }
+  }
+
+  displayMetadata(data) {
+    const formatSize = (bytes) => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    const formatDate = (isoString) => {
+      return new Date(isoString).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const escapeHtml = (str) => {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    };
+
+    let html = `<div><span class="label">Name:</span>${escapeHtml(data.filename)}</div>`;
+    if (data.width && data.height) {
+      html += `<div><span class="label">Dimensions:</span>${data.width} × ${data.height}</div>`;
+    }
+    html += `<div><span class="label">File size:</span>${formatSize(data.size)}</div>`;
+    if (data.type) {
+      html += `<div><span class="label">Format:</span>${data.type.toUpperCase()}</div>`;
+    }
+
+    // EXIF data
+    if (data.exif) {
+      const exif = data.exif;
+
+      if (exif.dateTaken) {
+        html += `<div><span class="label">Taken:</span>${escapeHtml(exif.dateTaken)}</div>`;
+      }
+
+      if (exif.camera) {
+        html += `<div><span class="label">Camera:</span>${escapeHtml(exif.camera)}</div>`;
+      }
+
+      if (exif.lens) {
+        html += `<div><span class="label">Lens:</span>${escapeHtml(exif.lens)}</div>`;
+      }
+
+      // Exposure settings on one line
+      const exposure = [];
+      if (exif.aperture) exposure.push(exif.aperture);
+      if (exif.shutterSpeed) exposure.push(exif.shutterSpeed);
+      if (exif.iso) exposure.push(`ISO ${exif.iso}`);
+      if (exposure.length > 0) {
+        html += `<div><span class="label">Exposure:</span>${exposure.join('  ')}</div>`;
+      }
+
+      if (exif.focalLength) {
+        html += `<div><span class="label">Focal length:</span>${exif.focalLength}</div>`;
+      }
+
+      if (exif.flash) {
+        html += `<div><span class="label">Flash:</span>${escapeHtml(exif.flash)}</div>`;
+      }
+
+      if (exif.gps) {
+        const lat = exif.gps.latitude.toFixed(6);
+        const lng = exif.gps.longitude.toFixed(6);
+        html += `<div><span class="label">GPS:</span>${lat}, ${lng}</div>`;
+      }
+
+      if (exif.artist) {
+        html += `<div><span class="label">Artist:</span>${escapeHtml(exif.artist)}</div>`;
+      }
+
+      if (exif.copyright) {
+        html += `<div><span class="label">Copyright:</span>${escapeHtml(exif.copyright)}</div>`;
+      }
+
+      if (exif.software) {
+        html += `<div><span class="label">Software:</span>${escapeHtml(exif.software)}</div>`;
+      }
+    }
+
+    html += `<div><span class="label">Modified:</span>${formatDate(data.modified)}</div>`;
+
+    this.metadata.innerHTML = html;
+  }
+
   handleKeydown(e) {
     switch (e.key) {
       case 'ArrowRight':
@@ -244,6 +372,10 @@ class Slideshow {
       case 's':
       case 'S':
         this.toggleShuffle();
+        break;
+      case 'i':
+      case 'I':
+        this.toggleMetadata();
         break;
     }
   }

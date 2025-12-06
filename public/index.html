@@ -209,6 +209,43 @@
     body.show-cursor .clock {
       opacity: 1;
     }
+
+    .metadata {
+      position: fixed;
+      bottom: 80px;
+      left: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 350px;
+      max-height: 60vh;
+      overflow-y: auto;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: none;
+    }
+
+    .metadata.enabled {
+      display: block;
+    }
+
+    body.show-cursor .metadata.enabled {
+      opacity: 1;
+    }
+
+    .metadata div {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .metadata .label {
+      color: #aaa;
+      margin-right: 6px;
+    }
   </style>
 </head>
 <body>
@@ -229,6 +266,7 @@
 
   <div class="clock" id="clock"></div>
   <div class="image-counter" id="imageCounter"></div>
+  <div class="metadata" id="metadata"></div>
 
   <div class="controls">
     <button id="prevBtn">◀ Prev</button>
@@ -242,10 +280,13 @@
         <option value="10000">10 sec</option>
         <option value="30000" selected>30 sec</option>
         <option value="60000">1 min</option>
+        <option value="120000">2 min</option>
+        <option value="180000">3 min</option>
         <option value="300000">5 min</option>
       </select>
     </label>
     <button id="shuffleBtn">🔀 Shuffle</button>
+    <button id="metadataBtn">ℹ Info</button>
     <button id="fullscreenBtn">⛶ Fullscreen</button>
   </div>
 

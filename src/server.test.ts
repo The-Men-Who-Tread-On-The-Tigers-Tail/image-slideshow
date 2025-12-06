@@ -2,7 +2,7 @@ import request from 'supertest';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { createApp, isImageFile, getImageFiles, IMAGE_EXTENSIONS } from './server';
+import { createApp, isImageFile, getImageFiles, getImageMetadata, IMAGE_EXTENSIONS } from './server';
 
 describe('isImageFile', () => {
   it('should return true for supported image extensions', () => {
@@ -162,5 +162,113 @@ describe('API endpoints', () => {
       expect(response.status).toBe(403);
       expect(response.text).toBe('Access denied');
     });
+  });
+
+  describe('GET /api/images/:filename/metadata', () => {
+    it('should return metadata for an existing image', async () => {
+      // Create a minimal valid PNG file (1x1 pixel)
+      const pngHeader = Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, // PNG signature
+        0x00, 0x00, 0x00, 0x0d, // IHDR chunk length
+        0x49, 0x48, 0x44, 0x52, // IHDR
+        0x00, 0x00, 0x00, 0x01, // width: 1
+        0x00, 0x00, 0x00, 0x01, // height: 1
+        0x08, 0x02, // bit depth: 8, color type: 2 (RGB)
+        0x00, 0x00, 0x00, // compression, filter, interlace
+        0x90, 0x77, 0x53, 0xde, // CRC
+        0x00, 0x00, 0x00, 0x00, // IEND chunk length
+        0x49, 0x45, 0x4e, 0x44, // IEND
+        0xae, 0x42, 0x60, 0x82  // CRC
+      ]);
+      fs.writeFileSync(path.join(testDir, 'test.png'), pngHeader);
+
+      const response = await request(app).get('/api/images/test.png/metadata');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('filename', 'test.png');
+      expect(response.body).toHaveProperty('width', 1);
+      expect(response.body).toHaveProperty('height', 1);
+      expect(response.body).toHaveProperty('size');
+      expect(response.body).toHaveProperty('modified');
+      expect(response.body).toHaveProperty('type', 'png');
+    });
+
+    it('should return 404 for non-existent image', async () => {
+      const response = await request(app).get('/api/images/nonexistent.jpg/metadata');
+      expect(response.status).toBe(404);
+      expect(response.text).toBe('Image not found');
+    });
+
+    it('should return 404 for non-image files', async () => {
+      fs.writeFileSync(path.join(testDir, 'secret.txt'), 'secret data');
+
+      const response = await request(app).get('/api/images/secret.txt/metadata');
+      expect(response.status).toBe(404);
+      expect(response.text).toBe('Image not found');
+    });
+
+    it('should block path traversal attempts', async () => {
+      const response = await request(app).get('/api/images/..%2F..%2Fetc%2Fpasswd/metadata');
+      expect(response.status).toBe(403);
+      expect(response.text).toBe('Access denied');
+    });
+  });
+});
+
+describe('getImageMetadata', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'metadata-test-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(testDir, { recursive: true, force: true });
+  });
+
+  it('should return metadata for a valid image', () => {
+    // Create a minimal valid PNG file
+    const pngHeader = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+      0x00, 0x00, 0x00, 0x0d,
+      0x49, 0x48, 0x44, 0x52,
+      0x00, 0x00, 0x00, 0x10, // width: 16
+      0x00, 0x00, 0x00, 0x10, // height: 16
+      0x08, 0x02,
+      0x00, 0x00, 0x00,
+      0x90, 0x91, 0x68, 0x36,
+      0x00, 0x00, 0x00, 0x00,
+      0x49, 0x45, 0x4e, 0x44,
+      0xae, 0x42, 0x60, 0x82
+    ]);
+    const filepath = path.join(testDir, 'test.png');
+    fs.writeFileSync(filepath, pngHeader);
+
+    const metadata = getImageMetadata(filepath, 'test.png');
+
+    expect(metadata).not.toBeNull();
+    expect(metadata!.filename).toBe('test.png');
+    expect(metadata!.width).toBe(16);
+    expect(metadata!.height).toBe(16);
+    expect(metadata!.size).toBeGreaterThan(0);
+    expect(metadata!.modified).toBeDefined();
+    expect(metadata!.type).toBe('png');
+  });
+
+  it('should return null for non-existent file', () => {
+    const metadata = getImageMetadata('/non/existent/path.jpg', 'path.jpg');
+    expect(metadata).toBeNull();
+  });
+
+  it('should return metadata with null dimensions for unsupported format', () => {
+    const filepath = path.join(testDir, 'fake.jpg');
+    fs.writeFileSync(filepath, 'not a real image');
+
+    const metadata = getImageMetadata(filepath, 'fake.jpg');
+
+    expect(metadata).not.toBeNull();
+    expect(metadata!.filename).toBe('fake.jpg');
+    expect(metadata!.width).toBeNull();
+    expect(metadata!.height).toBeNull();
+    expect(metadata!.size).toBeGreaterThan(0);
   });
 });
