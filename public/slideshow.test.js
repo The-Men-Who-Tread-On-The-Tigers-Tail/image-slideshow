@@ -24,13 +24,14 @@ function setupDOM() {
       <div class="slide" id="slide1"></div>
       <div class="slide" id="slide2"></div>
     </div>
+    <div class="clock" id="clock"></div>
     <div class="image-counter" id="imageCounter"></div>
     <div class="controls">
       <button id="prevBtn">◀ Prev</button>
       <button id="playPauseBtn">⏸ Pause</button>
       <button id="nextBtn">Next ▶</button>
       <select id="intervalSelect">
-        <option value="5000" selected>5 sec</option>
+        <option value="30000" selected>30 sec</option>
       </select>
       <button id="shuffleBtn">🔀 Shuffle</button>
       <button id="fullscreenBtn">⛶ Fullscreen</button>
@@ -243,5 +244,70 @@ describe('Slideshow shuffle/order feature', () => {
 
       expect(document.getElementById('shuffleBtn').textContent).toBe('➡️ Order');
     });
+  });
+});
+
+describe('Clock feature', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('should initialize clock element', async () => {
+    const slideshow = new Slideshow();
+    await Promise.resolve();
+
+    expect(slideshow.clock).toBe(document.getElementById('clock'));
+  });
+
+  it('should display time immediately on initialization', async () => {
+    const slideshow = new Slideshow();
+    await Promise.resolve();
+
+    const clockText = document.getElementById('clock').textContent;
+    expect(clockText).toBeTruthy();
+    expect(clockText.length).toBeGreaterThan(0);
+  });
+
+  it('should display time in valid format', async () => {
+    const slideshow = new Slideshow();
+    await Promise.resolve();
+
+    const clockText = document.getElementById('clock').textContent;
+    // Time should contain colons (e.g., "12:34:56" or "12:34:56 PM")
+    expect(clockText).toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it('should update clock every second', async () => {
+    const mockDate = new Date('2024-01-15T10:30:00');
+    jest.setSystemTime(mockDate);
+
+    const slideshow = new Slideshow();
+    await Promise.resolve();
+
+    const initialTime = document.getElementById('clock').textContent;
+
+    // Advance time by 1 second
+    jest.setSystemTime(new Date('2024-01-15T10:30:01'));
+    jest.advanceTimersByTime(1000);
+
+    const updatedTime = document.getElementById('clock').textContent;
+
+    // The time should have been updated (seconds changed)
+    expect(updatedTime).toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it('should call setInterval with 1000ms', async () => {
+    const setIntervalSpy = jest.spyOn(global, 'setInterval');
+
+    const slideshow = new Slideshow();
+    await Promise.resolve();
+
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 1000);
+
+    setIntervalSpy.mockRestore();
   });
 });

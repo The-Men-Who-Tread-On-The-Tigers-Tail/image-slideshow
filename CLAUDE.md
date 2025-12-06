@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run build    # Compile TypeScript to dist/
 npm run start    # Run the compiled server
 npm run dev      # Build and run in one command
+npm test         # Run all tests (backend + frontend)
 ```
 
 Run with a custom images folder:
@@ -28,8 +29,8 @@ This is a fullscreen image slideshow application with a TypeScript Express backe
 - Double-buffered slide transitions for smooth crossfades
 - Start screen showing image count before launching
 - Controls: prev/next, play/pause, interval selection (3s-5min), fullscreen
-- Keyboard shortcuts: arrows (nav), space (next), Escape (pause), F (fullscreen)
+- Keyboard shortcuts: arrows (nav), space (next), Escape (pause), F (fullscreen), S (shuffle/order)
 - Touch support: left/right edges for nav, center for pause
-- Auto-hides cursor and controls after 3 seconds of inactivity
+- Auto-hides cursor and controls after 20 seconds of inactivity
 
 Images are shuffled on load. Supported formats: jpg, jpeg, png, gif, webp, bmp, svg.

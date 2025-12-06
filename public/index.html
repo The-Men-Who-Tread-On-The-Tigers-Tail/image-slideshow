@@ -192,6 +192,23 @@
     body.show-cursor .image-counter {
       opacity: 1;
     }
+
+    .clock {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    body.show-cursor .clock {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -210,6 +227,7 @@
     <div class="slide" id="slide2"></div>
   </div>
 
+  <div class="clock" id="clock"></div>
   <div class="image-counter" id="imageCounter"></div>
 
   <div class="controls">
@@ -220,9 +238,9 @@
       Interval:
       <select id="intervalSelect">
         <option value="3000">3 sec</option>
-        <option value="5000" selected>5 sec</option>
+        <option value="5000">5 sec</option>
         <option value="10000">10 sec</option>
-        <option value="30000">30 sec</option>
+        <option value="30000" selected>30 sec</option>
         <option value="60000">1 min</option>
         <option value="300000">5 min</option>
       </select>

@@ -3,7 +3,7 @@ class Slideshow {
     this.images = [];
     this.displayImages = [];
     this.currentIndex = 0;
-    this.interval = 5000;
+    this.interval = 30000;
     this.timer = null;
     this.isPlaying = true;
     this.isShuffled = true;
@@ -13,6 +13,7 @@ class Slideshow {
     this.initElements();
     this.bindEvents();
     this.loadImages();
+    this.startClock();
   }
 
   initElements() {
@@ -29,6 +30,7 @@ class Slideshow {
     this.shuffleBtn = document.getElementById('shuffleBtn');
     this.fullscreenBtn = document.getElementById('fullscreenBtn');
     this.imageCounter = document.getElementById('imageCounter');
+    this.clock = document.getElementById('clock');
   }
 
   bindEvents() {
@@ -210,6 +212,15 @@ class Slideshow {
     this.cursorTimeout = setTimeout(() => {
       document.body.classList.remove('show-cursor');
     }, 20000);
+  }
+
+  startClock() {
+    const updateClock = () => {
+      const now = new Date();
+      this.clock.textContent = now.toLocaleTimeString();
+    };
+    updateClock();
+    setInterval(updateClock, 1000);
   }
 
   handleKeydown(e) {
