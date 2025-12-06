@@ -1,11 +1,12 @@
 class Slideshow {
   constructor() {
     this.images = [];
-    this.shuffledImages = [];
+    this.displayImages = [];
     this.currentIndex = 0;
     this.interval = 5000;
     this.timer = null;
     this.isPlaying = true;
+    this.isShuffled = true;
     this.activeSlide = 1;
     this.cursorTimeout = null;
 
@@ -24,6 +25,8 @@ class Slideshow {
     this.nextBtn = document.getElementById('nextBtn');
     this.playPauseBtn = document.getElementById('playPauseBtn');
     this.intervalSelect = document.getElementById('intervalSelect');
+    this.shuffleCheckbox = document.getElementById('shuffleCheckbox');
+    this.shuffleBtn = document.getElementById('shuffleBtn');
     this.fullscreenBtn = document.getElementById('fullscreenBtn');
     this.imageCounter = document.getElementById('imageCounter');
   }
@@ -34,6 +37,7 @@ class Slideshow {
     this.nextBtn.addEventListener('click', () => this.next());
     this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
     this.intervalSelect.addEventListener('change', (e) => this.changeInterval(e.target.value));
+    this.shuffleBtn.addEventListener('click', () => this.toggleShuffle());
     this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
 
     // Keyboard controls
@@ -57,7 +61,6 @@ class Slideshow {
         this.startBtn.textContent = 'No Images';
       } else {
         this.imageCountEl.textContent = `${this.images.length} images found`;
-        this.shuffleImages();
       }
     } catch (error) {
       console.error('Failed to load images:', error);
@@ -65,15 +68,36 @@ class Slideshow {
     }
   }
 
-  shuffleImages() {
-    this.shuffledImages = [...this.images];
-    for (let i = this.shuffledImages.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [this.shuffledImages[i], this.shuffledImages[j]] = [this.shuffledImages[j], this.shuffledImages[i]];
+  updateDisplayOrder() {
+    if (this.isShuffled) {
+      this.displayImages = [...this.images];
+      for (let i = this.displayImages.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.displayImages[i], this.displayImages[j]] = [this.displayImages[j], this.displayImages[i]];
+      }
+    } else {
+      this.displayImages = [...this.images];
     }
+    this.updateShuffleButton();
+  }
+
+  updateShuffleButton() {
+    this.shuffleBtn.textContent = this.isShuffled ? '🔀 Shuffle' : '➡️ Order';
+  }
+
+  toggleShuffle() {
+    this.isShuffled = !this.isShuffled;
+    const currentImage = this.displayImages[this.currentIndex];
+    this.updateDisplayOrder();
+    // Try to find the current image in the new order
+    const newIndex = this.displayImages.indexOf(currentImage);
+    this.currentIndex = newIndex >= 0 ? newIndex : 0;
+    this.imageCounter.textContent = `${this.currentIndex + 1} / ${this.displayImages.length}`;
   }
 
   start() {
+    this.isShuffled = this.shuffleCheckbox.checked;
+    this.updateDisplayOrder();
     this.startScreen.classList.add('hidden');
     this.showImage(0);
     this.startTimer();
@@ -81,10 +105,10 @@ class Slideshow {
   }
 
   showImage(index) {
-    if (this.shuffledImages.length === 0) return;
+    if (this.displayImages.length === 0) return;
 
-    this.currentIndex = ((index % this.shuffledImages.length) + this.shuffledImages.length) % this.shuffledImages.length;
-    const imageName = this.shuffledImages[this.currentIndex];
+    this.currentIndex = ((index % this.displayImages.length) + this.displayImages.length) % this.displayImages.length;
+    const imageName = this.displayImages[this.currentIndex];
     const imageUrl = `/images/${encodeURIComponent(imageName)}`;
 
     // Use double-buffering technique for smooth transitions
@@ -107,7 +131,7 @@ class Slideshow {
     img.alt = imageName;
 
     // Update counter
-    this.imageCounter.textContent = `${this.currentIndex + 1} / ${this.shuffledImages.length}`;
+    this.imageCounter.textContent = `${this.currentIndex + 1} / ${this.displayImages.length}`;
   }
 
   next() {
@@ -205,6 +229,10 @@ class Slideshow {
       case 'f':
       case 'F':
         this.toggleFullscreen();
+        break;
+      case 's':
+      case 'S':
+        this.toggleShuffle();
         break;
     }
   }

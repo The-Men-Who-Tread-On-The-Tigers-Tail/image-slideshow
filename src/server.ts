@@ -2,21 +2,15 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 
-const app = express();
-const PORT = 3000;
-
-// Get images folder from command line argument or use default
-const imagesFolder = process.argv[2] || path.join(__dirname, '../images');
-
 // Supported image extensions
-const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
 
-function isImageFile(filename: string): boolean {
+export function isImageFile(filename: string): boolean {
   const ext = path.extname(filename).toLowerCase();
   return IMAGE_EXTENSIONS.includes(ext);
 }
 
-function getImageFiles(folder: string): string[] {
+export function getImageFiles(folder: string): string[] {
   try {
     const files = fs.readdirSync(folder);
     return files.filter(isImageFile);
@@ -26,45 +20,58 @@ function getImageFiles(folder: string): string[] {
   }
 }
 
-// Serve static files from public folder
-app.use(express.static(path.join(__dirname, '../public')));
+export function createApp(imagesFolder: string) {
+  const app = express();
 
-// API endpoint to get list of images
-app.get('/api/images', (_req: Request, res: Response) => {
-  const images = getImageFiles(imagesFolder);
-  res.json(images);
-});
+  // Serve static files from public folder
+  app.use(express.static(path.join(__dirname, '../public')));
 
-// Serve images from the specified folder
-app.get('/images/:filename', (req: Request, res: Response) => {
-  const filename = req.params.filename;
-  const filepath = path.join(imagesFolder, filename);
+  // API endpoint to get list of images
+  app.get('/api/images', (_req: Request, res: Response) => {
+    const images = getImageFiles(imagesFolder);
+    res.json(images);
+  });
 
-  // Security check: ensure the resolved path is within the images folder
-  const resolvedPath = path.resolve(filepath);
-  const resolvedFolder = path.resolve(imagesFolder);
+  // Serve images from the specified folder
+  app.get('/images/:filename', (req: Request, res: Response) => {
+    const filename = req.params.filename;
+    const filepath = path.join(imagesFolder, filename);
 
-  if (!resolvedPath.startsWith(resolvedFolder)) {
-    res.status(403).send('Access denied');
-    return;
-  }
+    // Security check: ensure the resolved path is within the images folder
+    const resolvedPath = path.resolve(filepath);
+    const resolvedFolder = path.resolve(imagesFolder);
 
-  if (fs.existsSync(filepath) && isImageFile(filename)) {
-    res.sendFile(resolvedPath);
-  } else {
-    res.status(404).send('Image not found');
-  }
-});
+    if (!resolvedPath.startsWith(resolvedFolder)) {
+      res.status(403).send('Access denied');
+      return;
+    }
 
-app.listen(PORT, () => {
-  console.log(`Slideshow server running at http://localhost:${PORT}`);
-  console.log(`Serving images from: ${path.resolve(imagesFolder)}`);
+    if (fs.existsSync(filepath) && isImageFile(filename)) {
+      res.sendFile(resolvedPath);
+    } else {
+      res.status(404).send('Image not found');
+    }
+  });
 
-  const images = getImageFiles(imagesFolder);
-  console.log(`Found ${images.length} images`);
+  return app;
+}
 
-  if (images.length === 0) {
-    console.log('\nNo images found! Add images to the folder or specify a different folder:');
-    console.log('  npm start /path/to/your/images');
-  }
-});
+// Only start the server if this file is run directly
+if (require.main === module) {
+  const PORT = 3000;
+  const imagesFolder = process.argv[2] || path.join(__dirname, '../images');
+  const app = createApp(imagesFolder);
+
+  app.listen(PORT, () => {
+    console.log(`Slideshow server running at http://localhost:${PORT}`);
+    console.log(`Serving images from: ${path.resolve(imagesFolder)}`);
+
+    const images = getImageFiles(imagesFolder);
+    console.log(`Found ${images.length} images`);
+
+    if (images.length === 0) {
+      console.log('\nNo images found! Add images to the folder or specify a different folder:');
+      console.log('  npm start /path/to/your/images');
+    }
+  });
+}
