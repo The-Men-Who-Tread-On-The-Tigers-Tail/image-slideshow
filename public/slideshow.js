@@ -209,7 +209,7 @@ class Slideshow {
 
     this.cursorTimeout = setTimeout(() => {
       document.body.classList.remove('show-cursor');
-    }, 3000);
+    }, 20000);
   }
 
   handleKeydown(e) {
