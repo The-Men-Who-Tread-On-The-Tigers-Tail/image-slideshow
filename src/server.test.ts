@@ -2,6 +2,10 @@ import request from 'supertest';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+
+// Mock the 'open' module since it's ESM-only
+jest.mock('open', () => jest.fn());
+
 import { createApp, isImageFile, getImageFiles, getImageMetadata, IMAGE_EXTENSIONS } from './server';
 
 describe('isImageFile', () => {

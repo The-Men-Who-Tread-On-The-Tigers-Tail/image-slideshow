@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import sizeOf from 'image-size';
 import ExifReader from 'exifreader';
+import open from 'open';
 
 // Supported image extensions
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
@@ -264,5 +265,8 @@ if (require.main === module) {
       console.log('\nNo images found! Add images to the folder or specify a different folder:');
       console.log('  npm start /path/to/your/images');
     }
+
+    // Open browser automatically
+    open(`http://localhost:${PORT}`);
   });
 }
