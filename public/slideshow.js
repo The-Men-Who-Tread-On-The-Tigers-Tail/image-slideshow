@@ -260,7 +260,7 @@ class Slideshow {
 
     this.cursorTimeout = setTimeout(() => {
       document.body.classList.remove('show-cursor');
-    }, 15000);
+    }, 9000);
   }
 
   startClock() {

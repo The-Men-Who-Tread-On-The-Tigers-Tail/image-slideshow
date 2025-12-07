@@ -32,6 +32,6 @@ This is a fullscreen image slideshow application with a TypeScript Express backe
 - Controls: prev/next, play/pause, interval selection (3s-5min), fullscreen
 - Keyboard shortcuts: arrows (nav), space (next), Escape (pause), F (fullscreen), S (shuffle/order), I (info/metadata)
 - Touch support: left/right edges for nav, center for pause
-- Auto-hides cursor and controls after 15 seconds of inactivity
+- Auto-hides cursor and controls after 9 seconds of inactivity
 
 Images are shuffled on load. Supported formats: jpg, jpeg, png, gif, webp, bmp, svg.
