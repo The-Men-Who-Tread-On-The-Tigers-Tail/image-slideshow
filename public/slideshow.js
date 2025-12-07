@@ -41,6 +41,7 @@ class Slideshow {
     this.clock = document.getElementById('clock');
     this.metadata = document.getElementById('metadata');
     this.metadataBtn = document.getElementById('metadataBtn');
+    this.imageGrid = document.getElementById('imageGrid');
   }
 
   bindEvents() {
@@ -74,11 +75,39 @@ class Slideshow {
         this.startBtn.textContent = 'No Images';
       } else {
         this.imageCountEl.textContent = `${this.images.length} images found`;
+        this.populateImageGrid();
       }
     } catch (error) {
       console.error('Failed to load images:', error);
       this.imageCountEl.textContent = 'Error loading images';
     }
+  }
+
+  populateImageGrid() {
+    if (!this.imageGrid || this.images.length === 0) return;
+
+    // Shuffle and pick up to 25 images for the grid
+    const shuffled = [...this.images];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const gridImages = shuffled.slice(0, 40);
+
+    // Create grid cells
+    this.imageGrid.innerHTML = '';
+    gridImages.forEach(imageName => {
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+
+      const img = document.createElement('img');
+      img.src = `/images/${encodeURIComponent(imageName)}`;
+      img.alt = imageName;
+      img.onload = () => img.classList.add('loaded');
+
+      cell.appendChild(img);
+      this.imageGrid.appendChild(cell);
+    });
   }
 
   updateDisplayOrder() {

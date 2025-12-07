@@ -114,13 +114,55 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 200;
       color: white;
+      overflow: hidden;
+    }
+
+    .start-screen .image-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 2px;
+      background: #000;
+    }
+
+    .start-screen .image-grid .grid-cell {
+      overflow: hidden;
+      background: #111;
+    }
+
+    .start-screen .image-grid .grid-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .start-screen .image-grid .grid-cell img.loaded {
+      opacity: 0.4;
+    }
+
+    .start-screen .start-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 60px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
     }
 
     .start-screen h1 {
@@ -235,9 +277,12 @@
 </head>
 <body>
   <div class="start-screen" id="startScreen">
-    <h1>Image Slideshow</h1>
-    <p id="imageCount">Loading...</p>
-    <button class="start-btn" id="startBtn">Start Slideshow</button>
+    <div class="image-grid" id="imageGrid"></div>
+    <div class="start-content">
+      <h1>Image Slideshow</h1>
+      <p id="imageCount">Loading...</p>
+      <button class="start-btn" id="startBtn">Start Slideshow</button>
+    </div>
   </div>
 
   <div class="slideshow-container" id="slideshow">

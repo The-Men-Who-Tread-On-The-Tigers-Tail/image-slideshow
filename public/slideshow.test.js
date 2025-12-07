@@ -12,9 +12,12 @@ global.fetch = jest.fn();
 function setupDOM() {
   document.body.innerHTML = `
     <div class="start-screen" id="startScreen">
-      <h1>Image Slideshow</h1>
-      <p id="imageCount">Loading...</p>
-      <button class="start-btn" id="startBtn">Start Slideshow</button>
+      <div class="image-grid" id="imageGrid"></div>
+      <div class="start-content">
+        <h1>Image Slideshow</h1>
+        <p id="imageCount">Loading...</p>
+        <button class="start-btn" id="startBtn">Start Slideshow</button>
+      </div>
     </div>
     <div class="slideshow-container" id="slideshow">
       <div class="slide" id="slide1"></div>
@@ -514,5 +517,90 @@ describe('Metadata feature', () => {
     await slideshow.fetchMetadata();
 
     expect(global.fetch).not.toHaveBeenCalledWith(expect.stringContaining('/metadata'));
+  });
+});
+
+describe('Image grid feature', () => {
+  it('should initialize imageGrid element', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(slideshow.imageGrid).toBe(document.getElementById('imageGrid'));
+  });
+
+  it('should populate grid with images after loading', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const grid = document.getElementById('imageGrid');
+    const cells = grid.querySelectorAll('.grid-cell');
+
+    expect(cells.length).toBe(5); // We have 5 images in mock
+  });
+
+  it('should create up to 40 cells for larger image sets', async () => {
+    // Mock more images
+    const manyImages = Array.from({ length: 50 }, (_, i) => `image${i + 1}.jpg`);
+    global.fetch.mockResolvedValueOnce({
+      json: () => Promise.resolve(manyImages),
+    });
+
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const grid = document.getElementById('imageGrid');
+    const cells = grid.querySelectorAll('.grid-cell');
+
+    expect(cells.length).toBe(40); // Max 40 cells (8x5 grid)
+  });
+
+  it('should create img elements inside grid cells', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const grid = document.getElementById('imageGrid');
+    const images = grid.querySelectorAll('.grid-cell img');
+
+    expect(images.length).toBe(5);
+  });
+
+  it('should set correct src for grid images', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const grid = document.getElementById('imageGrid');
+    const images = grid.querySelectorAll('.grid-cell img');
+
+    // All images should have src starting with /images/
+    images.forEach(img => {
+      expect(img.src).toContain('/images/');
+    });
+  });
+
+  it('should not populate grid when no images', async () => {
+    global.fetch.mockResolvedValueOnce({
+      json: () => Promise.resolve([]),
+    });
+
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const grid = document.getElementById('imageGrid');
+    const cells = grid.querySelectorAll('.grid-cell');
+
+    expect(cells.length).toBe(0);
+  });
+
+  it('should add loaded class when image loads', async () => {
+    const slideshow = new Slideshow();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const grid = document.getElementById('imageGrid');
+    const img = grid.querySelector('.grid-cell img');
+
+    // Simulate image load
+    img.onload();
+
+    expect(img.classList.contains('loaded')).toBe(true);
   });
 });
