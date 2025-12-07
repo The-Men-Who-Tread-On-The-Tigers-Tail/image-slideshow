@@ -102,6 +102,11 @@ class Slideshow {
   }
 
   start() {
+    // Reset play state in case user toggled before starting
+    this.isPlaying = true;
+    this.playPauseBtn.textContent = '⏸ Pause';
+    this.stopTimer();
+
     this.isShuffled = this.shuffleCheckbox.checked;
     this.updateDisplayOrder();
     this.startScreen.classList.add('hidden');
@@ -220,7 +225,7 @@ class Slideshow {
 
     this.cursorTimeout = setTimeout(() => {
       document.body.classList.remove('show-cursor');
-    }, 20000);
+    }, 15000);
   }
 
   startClock() {

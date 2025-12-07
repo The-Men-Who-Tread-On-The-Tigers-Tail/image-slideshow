@@ -22,8 +22,9 @@ This is a fullscreen image slideshow application with a TypeScript Express backe
 
 **Backend (`src/server.ts`)**: Express server on port 3000 that:
 - Serves static files from `public/`
-- Provides `/api/images` endpoint returning image filenames from the configured folder
-- Serves images via `/images/:filename` with path traversal protection
+- `/api/images` - returns list of image filenames from the configured folder
+- `/images/:filename` - serves individual images with path traversal protection
+- `/api/images/:filename/metadata` - returns image dimensions, file info, and EXIF data (camera, lens, exposure settings, GPS, etc.)
 
 **Frontend (`public/`)**: Single-page slideshow with:
 - Double-buffered slide transitions for smooth crossfades
@@ -31,6 +32,6 @@ This is a fullscreen image slideshow application with a TypeScript Express backe
 - Controls: prev/next, play/pause, interval selection (3s-5min), fullscreen
 - Keyboard shortcuts: arrows (nav), space (next), Escape (pause), F (fullscreen), S (shuffle/order), I (info/metadata)
 - Touch support: left/right edges for nav, center for pause
-- Auto-hides cursor and controls after 20 seconds of inactivity
+- Auto-hides cursor and controls after 15 seconds of inactivity
 
 Images are shuffled on load. Supported formats: jpg, jpeg, png, gif, webp, bmp, svg.
