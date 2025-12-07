@@ -3,7 +3,7 @@ class Slideshow {
     this.images = [];
     this.displayImages = [];
     this.currentIndex = 0;
-    this.interval = 30000;
+    this.interval = 60000;
     this.timer = null;
     this.isPlaying = true;
     this.isShuffled = true;
