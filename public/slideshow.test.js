@@ -14,10 +14,6 @@ function setupDOM() {
     <div class="start-screen" id="startScreen">
       <h1>Image Slideshow</h1>
       <p id="imageCount">Loading...</p>
-      <label class="shuffle-option">
-        <input type="checkbox" id="shuffleCheckbox" checked>
-        Shuffle images
-      </label>
       <button class="start-btn" id="startBtn">Start Slideshow</button>
     </div>
     <div class="slideshow-container" id="slideshow">
@@ -163,11 +159,9 @@ describe('Slideshow shuffle/order feature', () => {
   });
 
   describe('start', () => {
-    it('should use shuffle mode when checkbox is checked', async () => {
+    it('should use shuffle mode by default', async () => {
       const slideshow = new Slideshow();
       await new Promise(resolve => setTimeout(resolve, 10));
-
-      document.getElementById('shuffleCheckbox').checked = true;
 
       // Mock methods called by start()
       slideshow.showImage = jest.fn();
@@ -177,22 +171,6 @@ describe('Slideshow shuffle/order feature', () => {
       slideshow.start();
 
       expect(slideshow.isShuffled).toBe(true);
-    });
-
-    it('should use order mode when checkbox is unchecked', async () => {
-      const slideshow = new Slideshow();
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      document.getElementById('shuffleCheckbox').checked = false;
-
-      slideshow.showImage = jest.fn();
-      slideshow.startTimer = jest.fn();
-      slideshow.requestFullscreen = jest.fn();
-
-      slideshow.start();
-
-      expect(slideshow.isShuffled).toBe(false);
-      expect(slideshow.displayImages).toEqual(['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg']);
     });
   });
 
@@ -315,74 +293,78 @@ describe('Clock feature', () => {
 });
 
 describe('Metadata feature', () => {
-  it('should initialize metadata elements', async () => {
+  it('should initialize metadata elements with metadata enabled by default', async () => {
     const slideshow = new Slideshow();
     await new Promise(resolve => setTimeout(resolve, 10));
 
     expect(slideshow.metadata).toBe(document.getElementById('metadata'));
     expect(slideshow.metadataBtn).toBe(document.getElementById('metadataBtn'));
-    expect(slideshow.showMetadata).toBe(false);
+    expect(slideshow.showMetadata).toBe(true);
+    expect(document.getElementById('metadata').classList.contains('enabled')).toBe(true);
+    expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info ✓');
   });
 
   it('should toggle showMetadata state', async () => {
     const slideshow = new Slideshow();
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    expect(slideshow.showMetadata).toBe(false);
-
-    slideshow.toggleMetadata();
     expect(slideshow.showMetadata).toBe(true);
 
     slideshow.toggleMetadata();
     expect(slideshow.showMetadata).toBe(false);
+
+    slideshow.toggleMetadata();
+    expect(slideshow.showMetadata).toBe(true);
   });
 
-  it('should add enabled class when metadata is shown', async () => {
+  it('should toggle enabled class when metadata is toggled', async () => {
     const slideshow = new Slideshow();
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    slideshow.toggleMetadata();
     expect(document.getElementById('metadata').classList.contains('enabled')).toBe(true);
 
     slideshow.toggleMetadata();
     expect(document.getElementById('metadata').classList.contains('enabled')).toBe(false);
+
+    slideshow.toggleMetadata();
+    expect(document.getElementById('metadata').classList.contains('enabled')).toBe(true);
   });
 
   it('should update button text when toggling', async () => {
     const slideshow = new Slideshow();
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info');
-
-    slideshow.toggleMetadata();
     expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info ✓');
 
     slideshow.toggleMetadata();
     expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info');
+
+    slideshow.toggleMetadata();
+    expect(document.getElementById('metadataBtn').textContent).toBe('ℹ Info ✓');
   });
 
   it('should toggle metadata when I key is pressed', async () => {
     const slideshow = new Slideshow();
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    expect(slideshow.showMetadata).toBe(false);
+    expect(slideshow.showMetadata).toBe(true);
 
     const event = new KeyboardEvent('keydown', { key: 'i' });
     slideshow.handleKeydown(event);
 
-    expect(slideshow.showMetadata).toBe(true);
+    expect(slideshow.showMetadata).toBe(false);
   });
 
   it('should toggle metadata when uppercase I key is pressed', async () => {
     const slideshow = new Slideshow();
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    expect(slideshow.showMetadata).toBe(false);
+    expect(slideshow.showMetadata).toBe(true);
 
     const event = new KeyboardEvent('keydown', { key: 'I' });
     slideshow.handleKeydown(event);
 
-    expect(slideshow.showMetadata).toBe(true);
+    expect(slideshow.showMetadata).toBe(false);
   });
 
   it('should display metadata correctly', async () => {
@@ -526,7 +508,7 @@ describe('Metadata feature', () => {
 
     slideshow.displayImages = ['image1.jpg'];
     slideshow.currentIndex = 0;
-    slideshow.showMetadata = false;
+    slideshow.showMetadata = false; // Explicitly disable
 
     jest.clearAllMocks();
     await slideshow.fetchMetadata();

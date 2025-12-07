@@ -9,12 +9,20 @@ class Slideshow {
     this.isShuffled = true;
     this.activeSlide = 1;
     this.cursorTimeout = null;
-    this.showMetadata = false;
+    this.showMetadata = true;
 
     this.initElements();
     this.bindEvents();
     this.loadImages();
     this.startClock();
+    this.initMetadataState();
+  }
+
+  initMetadataState() {
+    if (this.showMetadata) {
+      this.metadata.classList.add('enabled');
+      this.updateMetadataButton();
+    }
   }
 
   initElements() {
@@ -27,7 +35,6 @@ class Slideshow {
     this.nextBtn = document.getElementById('nextBtn');
     this.playPauseBtn = document.getElementById('playPauseBtn');
     this.intervalSelect = document.getElementById('intervalSelect');
-    this.shuffleCheckbox = document.getElementById('shuffleCheckbox');
     this.shuffleBtn = document.getElementById('shuffleBtn');
     this.fullscreenBtn = document.getElementById('fullscreenBtn');
     this.imageCounter = document.getElementById('imageCounter');
@@ -107,7 +114,6 @@ class Slideshow {
     this.playPauseBtn.textContent = '⏸ Pause';
     this.stopTimer();
 
-    this.isShuffled = this.shuffleCheckbox.checked;
     this.updateDisplayOrder();
     this.startScreen.classList.add('hidden');
     this.showImage(0);
