@@ -13,13 +13,26 @@ export function isImageFile(filename: string): boolean {
 }
 
 export function getImageFiles(folder: string): string[] {
-  try {
-    const files = fs.readdirSync(folder);
-    return files.filter(isImageFile);
-  } catch (error) {
-    console.error(`Error reading folder ${folder}:`, error);
-    return [];
+  const results: string[] = [];
+
+  function walkDir(currentPath: string, relativePath: string = ''): void {
+    try {
+      const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+      for (const entry of entries) {
+        const entryRelativePath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) {
+          walkDir(path.join(currentPath, entry.name), entryRelativePath);
+        } else if (entry.isFile() && isImageFile(entry.name)) {
+          results.push(entryRelativePath);
+        }
+      }
+    } catch (error) {
+      console.error(`Error reading folder ${currentPath}:`, error);
+    }
   }
+
+  walkDir(folder);
+  return results;
 }
 
 export interface ImageMetadata {
@@ -183,47 +196,47 @@ export function createApp(imagesFolder: string) {
     res.json(images);
   });
 
-  // Serve images from the specified folder
-  app.get('/images/:filename', (req: Request, res: Response) => {
-    const filename = req.params.filename;
-    const filepath = path.join(imagesFolder, filename);
+  // Serve images from the specified folder (supports subdirectories)
+  app.get('/images/*', (req: Request, res: Response) => {
+    const imagePath = req.params[0];
+    const filepath = path.join(imagesFolder, imagePath);
 
     // Security check: ensure the resolved path is within the images folder
     const resolvedPath = path.resolve(filepath);
     const resolvedFolder = path.resolve(imagesFolder);
 
-    if (!resolvedPath.startsWith(resolvedFolder)) {
+    if (!resolvedPath.startsWith(resolvedFolder + path.sep) && resolvedPath !== resolvedFolder) {
       res.status(403).send('Access denied');
       return;
     }
 
-    if (fs.existsSync(filepath) && isImageFile(filename)) {
+    if (fs.existsSync(filepath) && isImageFile(path.basename(filepath))) {
       res.sendFile(resolvedPath);
     } else {
       res.status(404).send('Image not found');
     }
   });
 
-  // API endpoint to get image metadata
-  app.get('/api/images/:filename/metadata', (req: Request, res: Response) => {
-    const filename = req.params.filename;
-    const filepath = path.join(imagesFolder, filename);
+  // API endpoint to get image metadata (supports subdirectories)
+  app.get('/api/images/*/metadata', (req: Request, res: Response) => {
+    const imagePath = req.params[0];
+    const filepath = path.join(imagesFolder, imagePath);
 
     // Security check: ensure the resolved path is within the images folder
     const resolvedPath = path.resolve(filepath);
     const resolvedFolder = path.resolve(imagesFolder);
 
-    if (!resolvedPath.startsWith(resolvedFolder)) {
+    if (!resolvedPath.startsWith(resolvedFolder + path.sep) && resolvedPath !== resolvedFolder) {
       res.status(403).send('Access denied');
       return;
     }
 
-    if (!fs.existsSync(filepath) || !isImageFile(filename)) {
+    if (!fs.existsSync(filepath) || !isImageFile(path.basename(filepath))) {
       res.status(404).send('Image not found');
       return;
     }
 
-    const metadata = getImageMetadata(resolvedPath, filename);
+    const metadata = getImageMetadata(resolvedPath, imagePath);
     if (metadata) {
       res.json(metadata);
     } else {

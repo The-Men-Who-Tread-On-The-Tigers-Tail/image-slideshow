@@ -64,6 +64,36 @@ describe('getImageFiles', () => {
     const images = getImageFiles(testDir);
     expect(images).toEqual([]);
   });
+
+  it('should find images in subdirectories recursively', () => {
+    // Create nested directory structure
+    const subdir1 = path.join(testDir, 'subdir1');
+    const subdir2 = path.join(testDir, 'subdir1', 'subdir2');
+    fs.mkdirSync(subdir1);
+    fs.mkdirSync(subdir2);
+
+    fs.writeFileSync(path.join(testDir, 'root.jpg'), '');
+    fs.writeFileSync(path.join(subdir1, 'level1.png'), '');
+    fs.writeFileSync(path.join(subdir2, 'level2.gif'), '');
+    fs.writeFileSync(path.join(subdir1, 'document.pdf'), '');
+
+    const images = getImageFiles(testDir);
+    expect(images).toHaveLength(3);
+    expect(images).toContain('root.jpg');
+    expect(images).toContain('subdir1/level1.png');
+    expect(images).toContain('subdir1/subdir2/level2.gif');
+    expect(images).not.toContain('subdir1/document.pdf');
+  });
+
+  it('should handle empty subdirectories', () => {
+    const emptySubdir = path.join(testDir, 'empty');
+    fs.mkdirSync(emptySubdir);
+    fs.writeFileSync(path.join(testDir, 'image.jpg'), '');
+
+    const images = getImageFiles(testDir);
+    expect(images).toHaveLength(1);
+    expect(images).toContain('image.jpg');
+  });
 });
 
 describe('IMAGE_EXTENSIONS', () => {
@@ -117,6 +147,19 @@ describe('API endpoints', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual(['photo.jpg']);
     });
+
+    it('should return images from subdirectories with relative paths', async () => {
+      const subdir = path.join(testDir, 'vacation');
+      fs.mkdirSync(subdir);
+      fs.writeFileSync(path.join(testDir, 'root.jpg'), 'fake image data');
+      fs.writeFileSync(path.join(subdir, 'beach.png'), 'fake image data');
+
+      const response = await request(app).get('/api/images');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveLength(2);
+      expect(response.body).toContain('root.jpg');
+      expect(response.body).toContain('vacation/beach.png');
+    });
   });
 
   describe('GET /images/:filename', () => {
@@ -161,6 +204,42 @@ describe('API endpoints', () => {
       const response = await request(app).get('/images/subdir%2F..%2F..%2Fsecret.jpg');
       expect(response.status).toBe(403);
       expect(response.text).toBe('Access denied');
+    });
+
+    it('should serve images from subdirectories', async () => {
+      const subdir = path.join(testDir, 'photos');
+      fs.mkdirSync(subdir);
+      const imageContent = Buffer.from('subdirectory image data');
+      fs.writeFileSync(path.join(subdir, 'nested.jpg'), imageContent);
+
+      const response = await request(app)
+        .get('/images/photos/nested.jpg')
+        .buffer(true)
+        .parse((res, callback) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(imageContent);
+    });
+
+    it('should serve images from deeply nested subdirectories', async () => {
+      const deepDir = path.join(testDir, 'a', 'b', 'c');
+      fs.mkdirSync(deepDir, { recursive: true });
+      const imageContent = Buffer.from('deep image data');
+      fs.writeFileSync(path.join(deepDir, 'deep.png'), imageContent);
+
+      const response = await request(app)
+        .get('/images/a/b/c/deep.png')
+        .buffer(true)
+        .parse((res, callback) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(imageContent);
     });
   });
 
@@ -210,6 +289,32 @@ describe('API endpoints', () => {
       const response = await request(app).get('/api/images/..%2F..%2Fetc%2Fpasswd/metadata');
       expect(response.status).toBe(403);
       expect(response.text).toBe('Access denied');
+    });
+
+    it('should return metadata for images in subdirectories', async () => {
+      const subdir = path.join(testDir, 'album');
+      fs.mkdirSync(subdir);
+      // Create a minimal valid PNG file (1x1 pixel)
+      const pngHeader = Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+        0x00, 0x00, 0x00, 0x0d,
+        0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01,
+        0x00, 0x00, 0x00, 0x01,
+        0x08, 0x02,
+        0x00, 0x00, 0x00,
+        0x90, 0x77, 0x53, 0xde,
+        0x00, 0x00, 0x00, 0x00,
+        0x49, 0x45, 0x4e, 0x44,
+        0xae, 0x42, 0x60, 0x82
+      ]);
+      fs.writeFileSync(path.join(subdir, 'photo.png'), pngHeader);
+
+      const response = await request(app).get('/api/images/album/photo.png/metadata');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('filename', 'album/photo.png');
+      expect(response.body).toHaveProperty('width', 1);
+      expect(response.body).toHaveProperty('height', 1);
     });
   });
 });
