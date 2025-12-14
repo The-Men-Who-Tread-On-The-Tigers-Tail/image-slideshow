@@ -110,6 +110,15 @@ class Slideshow {
     });
   }
 
+  stopGridLoading() {
+    if (this.imageGrid) {
+      // Clear src to abort pending downloads, then remove elements
+      const images = this.imageGrid.querySelectorAll('img');
+      images.forEach(img => img.src = '');
+      this.imageGrid.innerHTML = '';
+    }
+  }
+
   updateDisplayOrder() {
     if (this.isShuffled) {
       this.displayImages = [...this.images];
@@ -143,14 +152,20 @@ class Slideshow {
     this.playPauseBtn.textContent = '⏸ Pause';
     this.stopTimer();
 
+    // Stop loading background grid images to free up connections
+    this.stopGridLoading();
+
     this.updateDisplayOrder();
-    this.startScreen.classList.add('hidden');
-    this.showImage(0);
+
+    // Show first image, then hide start screen after it loads
+    this.showImage(0, () => {
+      this.startScreen.classList.add('hidden');
+    });
+
     this.startTimer();
-    this.requestFullscreen();
   }
 
-  showImage(index) {
+  showImage(index, onLoad) {
     if (this.displayImages.length === 0) return;
 
     this.currentIndex = ((index % this.displayImages.length) + this.displayImages.length) % this.displayImages.length;
@@ -172,6 +187,9 @@ class Slideshow {
       nextSlide.classList.add('active');
 
       this.activeSlide = this.activeSlide === 1 ? 2 : 1;
+
+      // Call callback if provided (for first image load)
+      if (onLoad) onLoad();
     };
     img.src = imageUrl;
     img.alt = imageName;
